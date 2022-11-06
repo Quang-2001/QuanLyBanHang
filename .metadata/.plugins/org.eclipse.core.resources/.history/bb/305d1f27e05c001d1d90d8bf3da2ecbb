@@ -1,0 +1,854 @@
+package ui;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.print.PrinterException;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.function.DoublePredicate;
+
+import entity.LinhKien;
+import entity.Loai;
+import entity.HoaDon;
+import entity.ChiTietHD;
+import entity.KhachHang;
+import entity.NhanVien;
+import dao.LinhKien_DAO;
+import dao.Loai_DAO;
+import dao.KhachHang_DAO;
+import dao.NhanVien_DAO;
+import dao.ChiTietHD_DAO;
+import dao.HoaDon_DAO;
+import connectDB.ConnectDB;
+
+public class UI_BanHang extends JFrame implements ActionListener,MouseListener {
+	private JButton btnQuanLy, btnTimKiem, btnBanHang, btnThongKe, btnBaoCao, btnHoTro, btnDangXuat, btnThoat;
+	private JButton btnThem, btnThemSp, btnXoa, btnSua, btnIn, btnXoaRong, btnLamMoi;
+	private JButton btnTimSanPham;
+	private JButton btnMuaHang, btnHoaDon, btnInHoaDon, btnBan;
+	
+	String header[] = {"Mã Linh Kiện", "Tên Hàng", "Số Lượng", "Đơn Giá" ,"Giảm giá", "Thành Tiền"};
+	private JPanel pnBanHangMain,pnBanHangMainTop,pnBanHangMainCenter;
+	private JTextField edtSoLuong,edtTenNV,edtTenKH,edtDiaChi,edtDienThoai,edtEmail;
+	private JLabel lbNgayBan,lbMaNV, lbTenNV, lbMaKH, lbTenKH, lbDiaChi, lbDienThoai,lbMaHDBan, lbEmail,lbMaLinhKien;
+	
+	private JLabel lbTenLK,lbGiamGia,lbDonGia,lbThanhTien, lbResultThanhTien,lbSoLuong;
+	private JTextField edtTenLK,edtGiamGia,edtDonGia,edtThanhTien,edtMaHDBan,edtMaNV,edtMaKH,edtMaLinhKien,edtNgayBan;
+	private JPanel pnBanHangMainTable, pnBanHangMainConTrol,pnThanhTien;
+	private JButton btnLuu,btnInHD,btnLuuTT,btnLuuHD,btnTimKiemMaLK,btnsuaLK,btnXoaLK,btnTimKH,btnTimNV;
+	private JScrollPane pane;
+	
+	DecimalFormat formatter = new DecimalFormat("###,###,### VND");
+	SimpleDateFormat DateFormat = new SimpleDateFormat("dd/MM/yyyy");
+	
+	Color gbbtn = new Color(246, 229, 141);
+	Color gbActive = new Color(255, 242, 0);
+	Color gbBox = new Color(200,221,242);
+	Color gbMain = new Color(246, 229, 200);
+	
+	private LinhKien_DAO lk_dao =  new LinhKien_DAO();
+	private KhachHang_DAO kh_dao = new KhachHang_DAO();
+	private NhanVien_DAO nv_dao =  new NhanVien_DAO();
+	private HoaDon_DAO hd_dao = new HoaDon_DAO();
+	private ChiTietHD_DAO cthd_dao = new ChiTietHD_DAO();
+	private Loai_DAO l_dao = new Loai_DAO();
+	
+	ArrayList<ChiTietHD> dsLK = new ArrayList<ChiTietHD>();
+	LinhKien lkN;
+	JTable tb;
+	DefaultTableModel model;
+	private double TongTien = 0.0;
+	
+	public UI_BanHang() {
+		// TODO Auto-generated constructor stub
+		try {
+			ConnectDB.getInstance().connect();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		setTitle("Bán Hàng");
+		GiaoDienQuanly();
+		setSize(1400,700);
+		setVisible(true);
+		setResizable(false);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+	}
+	
+	public void GiaoDienQuanly(){
+		
+		//phân bên trái nha
+		JPanel pWest = new JPanel();
+		pWest.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),"Tác vụ"));
+		Color bgColor = new Color(223,249,251);
+		pWest.setBackground(bgColor);
+		
+		Icon iconBanHang = new ImageIcon("img/icon_banhang.png");
+		ImageIcon iconTimKiem = new ImageIcon("img/icon_timkiem.png");
+		ImageIcon iconQuanLy = new ImageIcon("img/icon_quanly.png");
+		ImageIcon iconBaoCao = new ImageIcon("img/icon_baocao.png");
+		ImageIcon iconDangXuat = new ImageIcon("img/icon_dangxuat.png");
+		ImageIcon iconThoat = new ImageIcon("img/icon_thoat.png");
+		ImageIcon iconHoTro = new ImageIcon("img/icon_HoTro.png");
+		
+		pWest.add(btnBanHang= new JButton("BÁN HÀNG",iconBanHang));
+		btnBanHang.setPreferredSize(new Dimension(200, 70));
+		btnBanHang.setBackground(gbActive);
+		btnBanHang.setForeground(Color.black);
+		btnBanHang.setBorder(BorderFactory.createLineBorder(Color.black));
+		pWest.add(Box.createVerticalStrut(80));
+		
+		pWest.add(btnTimKiem= new JButton("TÌM KIẾM",iconTimKiem));
+		btnTimKiem.setPreferredSize(new Dimension(200, 70));
+		btnTimKiem.setBackground(gbbtn);
+		btnTimKiem.setForeground(Color.DARK_GRAY);
+		btnTimKiem.setBorder(BorderFactory.createLineBorder(Color.black));
+		pWest.add(Box.createVerticalStrut(80));
+		
+		pWest.add(btnQuanLy= new JButton("QUẢN LÝ",iconQuanLy));
+		btnQuanLy.setBorder(BorderFactory.createLineBorder(Color.black));
+		btnQuanLy.setBackground(gbbtn);
+		btnQuanLy.setForeground(Color.darkGray);
+		btnQuanLy.setPreferredSize(new Dimension(200, 70));	
+		pWest.add(Box.createVerticalStrut(80));
+		
+		pWest.add(btnBaoCao= new JButton("BÁO CÁO",iconBaoCao));
+		btnBaoCao.setBorder(BorderFactory.createLineBorder(Color.black));
+		btnBaoCao.setBackground(gbbtn);
+		btnBaoCao.setForeground(Color.DARK_GRAY);
+		btnBaoCao.setPreferredSize(new Dimension(200, 70));
+		pWest.add(Box.createVerticalStrut(80));
+		
+		pWest.add(btnHoTro= new JButton("HỔ TRỢ",iconHoTro));
+		btnHoTro.setBorder(BorderFactory.createLineBorder(Color.black));
+		btnHoTro.setBackground(gbbtn);
+		btnHoTro.setForeground(Color.DARK_GRAY);
+		btnHoTro.setPreferredSize(new Dimension(200, 70));
+		pWest.add(Box.createVerticalStrut(80));
+		
+		pWest.add(btnDangXuat= new JButton("ĐĂNG XUẤT",iconDangXuat));
+		btnDangXuat.setBorder(BorderFactory.createLineBorder(Color.black));
+		btnDangXuat.setBackground(gbbtn);
+		btnDangXuat.setForeground(Color.DARK_GRAY);
+		btnDangXuat.setPreferredSize(new Dimension(200, 70));
+		pWest.add(Box.createVerticalStrut(80));
+		
+		pWest.add(btnThoat= new JButton("THOÁT",iconThoat));
+		btnThoat.setBorder(BorderFactory.createEtchedBorder(Color.red, Color.red));
+		Color bgExit = new Color(255, 121, 121);
+		btnThoat.setBackground(bgExit);
+		btnThoat.setForeground(Color.black);
+		btnThoat.setPreferredSize(new Dimension(200, 50));
+		pWest.add(Box.createVerticalStrut(80));
+		
+		add(pWest, BorderLayout.WEST);
+		pWest.setPreferredSize(new Dimension(250,243));
+		
+		btnBanHang.addActionListener(this);
+		btnBaoCao.addActionListener(this);
+		btnDangXuat.addActionListener(this);
+		btnHoTro.addActionListener(this);
+		btnQuanLy.addActionListener(this);
+		btnThoat.addActionListener(this);
+		btnTimKiem.addActionListener(this);
+		
+		
+		JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.addTab("Bán Hàng",banHang());
+		tabbedPane.setBackground(gbMain);
+        add(tabbedPane, BorderLayout.CENTER);	
+	}
+
+	private Component banHang() {
+		
+		ImageIcon iconTim = new ImageIcon("img/icon_TKSP.png");
+		ImageIcon iconAdd = new ImageIcon("img/icon-add.png");
+		ImageIcon iconXoa = new ImageIcon("img/icon-remove.png");
+		ImageIcon iconSua = new ImageIcon("img/icon-sua.png");
+		ImageIcon iconXoaRong = new ImageIcon("img/icon_xoarong.png");
+		ImageIcon iconTnHD = new ImageIcon("img/icon-print.png");
+		ImageIcon iconLuu = new ImageIcon("img/icon_hoadon.png");
+		
+		pnBanHangMain = new JPanel(null);
+		pnBanHangMain.setBackground(gbBox);
+														
+		pnBanHangMainTop = new JPanel();
+		pnBanHangMainTop.setBounds(0, 0, 1128, 190);
+		pnBanHangMainTop.setBorder(BorderFactory.createTitledBorder("Thông tin chung"));
+		pnBanHangMainTop.setLayout(null);
+		pnBanHangMainTop.setBackground(gbBox);
+		
+															//TOP_LEFT
+		pnBanHangMainTop.add(lbMaHDBan = new JLabel("Mã Hóa Đơn: "));
+		lbMaHDBan.setBounds(630, 20, 150, 20);
+		pnBanHangMainTop.add(edtMaHDBan = new JTextField());
+		edtMaHDBan.setBounds(750, 20, 300, 20);
+		edtMaHDBan.setText(autoMaHD());
+		edtMaHDBan.setEditable(false);
+		
+		
+		pnBanHangMainTop.add(lbNgayBan = new JLabel("Ngày Bán: "));
+		lbNgayBan.setBounds(630, 50, 150, 20);
+		pnBanHangMainTop.add(edtNgayBan = new JTextField());
+		edtNgayBan.setBounds(750, 50, 300, 20);
+		Date now =  Date.valueOf(LocalDate.now());
+		edtNgayBan.setText( DateFormat.format(now));
+		edtNgayBan.setEditable(false);
+		
+		pnBanHangMainTop.add(lbMaNV = new JLabel("Mã Nhân Viên: "));
+		lbMaNV.setBounds(630, 110, 150, 20);
+		pnBanHangMainTop.add(edtMaNV = new JTextField());
+		edtMaNV.setBounds(750, 110, 219, 20);
+		pnBanHangMainTop.add(btnTimNV = new JButton("Tìm",iconTim));
+		btnTimNV.setBounds(974, 110, 75, 20);
+		
+		pnBanHangMainTop.add(lbTenNV = new JLabel("Tên Nhân Viên: "));
+		lbTenNV.setBounds(630, 80, 150, 20);
+		pnBanHangMainTop.add(edtTenNV = new JTextField());
+		edtTenNV.setBounds(750, 80, 300, 20);
+		edtTenNV.setEditable(false);
+															//TOP_RIGHT
+		pnBanHangMainTop.add(lbMaKH = new JLabel("Mã Khách Hàng: "));
+		lbMaKH.setBounds(30, 20, 150, 20);
+		pnBanHangMainTop.add(edtMaKH = new JTextField());
+		edtMaKH.setBounds(150, 20, 300, 20);
+		edtMaKH.setText(autoMaKH());
+		edtMaKH.setEditable(false);
+		
+		pnBanHangMainTop.add(lbTenKH = new JLabel("Tên Khách Hàng: "));
+		lbTenKH.setBounds(30, 50, 150, 20);
+		pnBanHangMainTop.add(edtTenKH = new JTextField());
+		edtTenKH.setBounds(150, 50, 300, 20);
+		
+		pnBanHangMainTop.add(lbDiaChi = new JLabel("Địa chỉ: "));
+		lbDiaChi.setBounds(30, 80, 150, 20);
+		pnBanHangMainTop.add(edtDiaChi = new JTextField());
+		edtDiaChi.setBounds(150, 80, 300, 20);
+		
+		pnBanHangMainTop.add(lbEmail = new JLabel("Email: "));
+		lbEmail.setBounds(30, 110, 150, 20);
+		pnBanHangMainTop.add(edtEmail = new JTextField());
+		edtEmail.setBounds(150, 110, 300, 20);
+		
+		pnBanHangMainTop.add(lbDienThoai = new JLabel("Điện Thoại: "));
+		lbDienThoai.setBounds(30, 140, 150, 20);
+		pnBanHangMainTop.add(edtDienThoai = new JTextField());
+		edtDienThoai.setBounds(150, 140, 220, 20);
+		pnBanHangMainTop.add(btnTimKH = new JButton("Tìm",iconTim));
+		btnTimKH.setBounds(375,140,75,20);
+//												PANEL_CENTER
+		pnBanHangMainCenter = new JPanel(null);
+		pnBanHangMainCenter.setBounds(0, 190, 1128, 100);
+		pnBanHangMainCenter.setBorder(BorderFactory.createTitledBorder("Thông tin Linh Kiện: "));
+		pnBanHangMainCenter.setBackground(gbBox);
+		
+		pnBanHangMainCenter.add(lbMaLinhKien = new JLabel("Mã Linh Kiện: "));
+		lbMaLinhKien.setBounds(50, 55, 150, 20);
+		pnBanHangMainCenter.add(edtMaLinhKien= new JTextField());
+		edtMaLinhKien.setBounds(170, 55, 130, 20);
+		pnBanHangMainCenter.add(btnTimKiemMaLK = new JButton("Tìm",iconTim));
+		btnTimKiemMaLK.setBounds(305, 55, 75, 20);
+		
+		pnBanHangMainCenter.add(lbTenLK = new JLabel("Tên Linh Kiện: "));
+		lbTenLK.setBounds(50, 20, 150, 20);
+		pnBanHangMainCenter.add(edtTenLK = new JTextField());
+		edtTenLK.setBounds(170, 20, 520, 20);
+		edtTenLK.setEditable(false);
+		
+		pnBanHangMainCenter.add(lbSoLuong = new JLabel("Số Lượng: "));
+		lbSoLuong.setBounds(450, 55, 150, 20);
+		pnBanHangMainCenter.add(edtSoLuong = new JTextField());
+		edtSoLuong.setBounds(540, 55, 150, 20);
+		edtSoLuong.setHorizontalAlignment(JTextField.CENTER);
+		
+		
+		pnBanHangMainCenter.add(lbGiamGia = new JLabel("Giảm giá (%): "));
+		lbGiamGia.setBounds(820, 55, 150, 20);
+		pnBanHangMainCenter.add(edtGiamGia = new JTextField());
+		edtGiamGia.setBounds(920, 55, 150, 20);
+		edtGiamGia.setHorizontalAlignment(JTextField.RIGHT);
+		
+		
+		pnBanHangMainCenter.add(lbDonGia = new JLabel("Đơn giá: "));
+		lbDonGia.setBounds(820, 20, 150, 20);
+		pnBanHangMainCenter.add(edtDonGia = new JTextField());
+		edtDonGia.setBounds(920, 20, 150, 20);
+		edtDonGia.setHorizontalAlignment(JTextField.RIGHT);
+		edtDonGia.setEditable(false);
+		
+		
+//													PANEL_TABLE
+		pnBanHangMainTable = new JPanel(null);
+		pnBanHangMainTable.setBounds(0, 290, 1128, 220);
+		pnBanHangMainTable.setBackground(gbBox);
+		
+		model = new DefaultTableModel(header,0);
+		tb = new JTable(model);
+		tb.setBounds(5, 10, 1120, 200);
+		pnBanHangMainTable.add(pane = new JScrollPane(tb));
+		pane.setBounds(5, 10, 1120, 200);
+		
+													//THÀNH TIỀN
+		pnThanhTien = new JPanel(null);
+		pnThanhTien.setBounds(600, 515, 1120, 30);
+		pnThanhTien.setBackground(gbBox);
+		pnThanhTien.add(lbThanhTien = new JLabel("Tổng tiền:"));
+		lbThanhTien.setBounds(0, 10, 150, 25);
+		lbThanhTien.setFont(new Font("Serif", Font.PLAIN, 20));
+		pnThanhTien.add(lbResultThanhTien = new JLabel(""));
+		lbResultThanhTien.setBounds(150, 9, 250, 25);
+		lbResultThanhTien.setText(String.valueOf(formatter.format(0.0)));
+		lbResultThanhTien.setForeground(Color.red);
+		lbResultThanhTien.setFont(new Font("Serif", Font.PLAIN, 22));
+													
+//													PANEL_CTRL
+		pnBanHangMainConTrol = new JPanel();
+		pnBanHangMainConTrol.setBounds(0, 560, 1128, 100);
+		pnBanHangMainConTrol.setBackground(gbBox);
+		pnBanHangMainConTrol.setBorder(BorderFactory.createTitledBorder("Bảng Điều Khiển"));
+		pnBanHangMainConTrol.add(btnLuuTT= new JButton("Thêm linh kiện",iconAdd));
+		pnBanHangMainConTrol.add(btnXoaLK= new JButton("Xóa linh kiện",iconXoa));
+		pnBanHangMainConTrol.add(btnsuaLK= new JButton("Sửa linh kiện",iconSua));
+		pnBanHangMainConTrol.add(btnXoaRong= new JButton("Xóa rỗng",iconXoaRong));
+		pnBanHangMainConTrol.add(btnInHD= new JButton("In hóa đơn",iconTnHD));
+		pnBanHangMainConTrol.add(btnLuuHD= new JButton("Lưu hóa đơn",iconLuu)); 
+		btnLuuHD.setEnabled(false);
+		btnInHD.setEnabled(false);
+		
+		pnBanHangMain.add(pnBanHangMainTop);
+		pnBanHangMain.add(pnBanHangMainCenter);
+		pnBanHangMain.add(pnBanHangMainTable);
+		pnBanHangMain.add(pnThanhTien);
+		pnBanHangMain.add(pnBanHangMainConTrol);
+		
+		btnLuuHD.addActionListener(this);
+		btnLuuTT.addActionListener(this);
+		btnTimKiemMaLK.addActionListener(this);
+		btnXoaLK.addActionListener(this);
+		btnsuaLK.addActionListener(this);
+		btnXoaRong.addActionListener(this);
+		btnTimKH.addActionListener(this);
+		btnTimNV.addActionListener(this);
+		btnInHD.addActionListener(this);
+		tb.addMouseListener(this);
+		return pnBanHangMain;
+	}
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		new UI_BanHang();
+		UI_BanHang frmBanHang;
+		UI_QuanLy frmQuanLy;
+		UI_TimKiem frmTimKiem;
+		UI_BaoCao frmBaoCao;
+	}
+	public void XoaRong() {
+		
+			edtMaLinhKien.setText("");
+			edtSoLuong.setText("");
+			edtGiamGia.setText("");
+			edtTenLK.setText("");
+			edtDonGia.setText("");
+			edtMaKH.setText(autoMaKH());
+			edtMaHDBan.setText(autoMaHD());
+			edtDiaChi.setText("");
+			edtDienThoai.setText("");
+			edtEmail.setText("");
+			edtTenKH.setText("");
+			edtTenNV.setText("");
+			edtMaNV.setText("");
+			dsLK.removeAll(dsLK);
+			DefaultTableModel dtm = (DefaultTableModel) tb.getModel();
+			dtm.setRowCount(0);
+			lbResultThanhTien.setText(String.valueOf(formatter.format(0.0)));
+		
+	}
+	public String autoMaHD(){
+		String str;
+		int ma  = hd_dao.getMaHd();
+		if(ma < 10)
+			str = "HD0000" + ma; 
+		else if (ma < 100)
+			str = "HD000" + ma;
+		else if (ma < 1000)
+			str = "HD00" + ma;
+		else if (ma < 10000)
+			str = "HD0" + ma;
+		else
+			str = "HD" + ma;
+		return str;
+	}
+	public String autoMaKH(){
+		String str;
+		int ma  = kh_dao.getMaKH();
+		if(ma < 10)
+			str = "KH0000" + ma; 
+		else if (ma < 100)
+			str = "KH000" + ma;
+		else if (ma < 1000)
+			str = "KH00" + ma;
+		else if (ma < 10000)
+			str = "KH0" + ma;
+		else
+			str = "KH" + ma;
+		return str;
+	}
+	public boolean KiemTraSoDouble(String str) { 
+		  try {  
+		    Double.parseDouble(str);  
+		    return true;
+		  } catch(NumberFormatException e){  
+		    return false;  
+		  }  
+	}
+	public boolean KiemTraTTC() {
+		
+		if(edtTenKH.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this, "Tên khách hàng không được bỏ trống");
+			edtTenKH.requestFocus();
+			return false;
+		}
+		else if(!edtTenKH.getText().trim().matches("([A-Z]{1}[A-Za-z']{1,}[ ]{0,1}){1,}")) {
+			JOptionPane.showMessageDialog(this, "Tên khách hàng chữ cái đầu viết in hoa, các chữ cái sau viết thường và không được chứa số");
+			edtTenKH.requestFocus();
+			edtTenKH.selectAll();
+			return false;
+		}
+		else if( edtDiaChi.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this, "Địa chỉ không được bỏ trống");
+			edtDiaChi.requestFocus();
+			return false;
+		}
+		else if(edtEmail.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this, "Email không được bỏ trống");
+			edtEmail.requestFocus();
+			return false;
+		}
+		else if(!edtEmail.getText().trim().matches("^[A-Za-z][A-Za-z0-9._%+-]+@[a-z.-]+\\.[a-z]{2,6}$")) {
+			JOptionPane.showMessageDialog(this, "Email có định dạng : \nKí tự đầu là chữ (có thể viết hoa)\nCác kí tự sau có thể là chữ (có thể viết hoa), số hoặc kí tự  '_' \nSau kí tự @ không được viết hoa");
+			edtEmail.requestFocus();
+			edtEmail.selectAll();
+			return false;
+		}
+		else if(edtDienThoai.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this, "Số điện thoại không được bỏ trống");
+			edtDienThoai.requestFocus();
+			return false;
+		}
+		else if(!edtDienThoai.getText().trim().matches("[0][1-9][0-9]{8}")) {
+			JOptionPane.showMessageDialog(this, "Số điện thoại đạn 10 số và đầu số là 0 ");
+			edtDienThoai.requestFocus();
+			edtDienThoai.selectAll();
+			return false;
+		}
+		else if(edtMaNV.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this,"Mã nhân viên không được để trống");
+			edtMaNV.requestFocus();
+			return false;
+		}
+		else if(!edtMaNV.getText().trim().matches("(NV||nv)[0-9]{5}")) {
+			JOptionPane.showMessageDialog(this, "Mã Nhân viên có định dạng: NV00000");
+			edtMaNV.requestFocus();
+			edtMaNV.selectAll();
+			return false;
+		}
+		else if( edtTenNV.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this, "Phải thực hiện việc tìm mã nhân viên");
+			return false;
+		}
+		else if(dsLK.size() <= 0) {
+			JOptionPane.showMessageDialog(this,"Thêm ít nhất 1 sản phẩm vào hóa đơn");
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean KiemTraTTLK() {
+		if(edtMaLinhKien.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this,"Mã linh kiện không được để trống");
+			edtMaLinhKien.requestFocus();
+			return false;
+		}
+		else if(!edtMaLinhKien.getText().trim().matches("(LK||lk)[0-9]{5}")) {
+			JOptionPane.showMessageDialog(this, "Mã linh kiện có định dạng: LK00000");
+			edtMaLinhKien.requestFocus();
+			edtMaLinhKien.selectAll();
+			return false;
+		}
+		else if(edtSoLuong.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this,"Số lượng không được để trống");
+			edtSoLuong.requestFocus();
+			return false;
+		}
+		else if(!edtSoLuong.getText().trim().matches("[0-9]{1,}")) {
+			JOptionPane.showMessageDialog(this, "Số lượng chỉ được nhập số nguyên");
+			edtSoLuong.requestFocus();
+			edtSoLuong.selectAll();
+			return false;
+		}
+		else if(Integer.parseInt(edtSoLuong.getText().trim()) <= 0 ) {
+			JOptionPane.showMessageDialog(this, "Số Lượng phải lớn hơn 0");
+			edtSoLuong.requestFocus();
+			edtSoLuong.selectAll();
+			return false;
+		}
+		else if(edtGiamGia.getText().trim().equals("")) {
+			JOptionPane.showMessageDialog(this,"Giảm giá không được để trống");
+			edtGiamGia.requestFocus();
+			return false;
+		}
+		else if(!KiemTraSoDouble(edtGiamGia.getText().trim())) {
+			JOptionPane.showMessageDialog(this, "Giảm giá chỉ được nhập số và dấu chấm 1 lần VD: 10.5, 10 ");
+			edtGiamGia.requestFocus();
+			edtGiamGia.selectAll();
+			return false;
+		}
+		else if(Double.parseDouble(edtGiamGia.getText().trim()) < 0 || Double.parseDouble(edtGiamGia.getText().trim()) >= 100  ) {
+			JOptionPane.showMessageDialog(this, "Giảm giá phải nằm trong khoảng từ [0 -> 100]");
+			edtGiamGia.requestFocus();
+			edtGiamGia.selectAll();
+			return false;
+		}
+		return true;
+	}
+	
+	public String ChangeDate(String d){
+		String[] date = d.split("/");
+		return date[2] + "-" + date[1] + "-" + date[0];
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub
+				Object sou = e.getSource();
+				if(sou.equals(btnTimKiemMaLK)) {
+					lkN = lk_dao.getLinhKienTheoMaLK(edtMaLinhKien.getText().trim().toUpperCase());
+						if(lkN == null) {
+							JOptionPane.showMessageDialog(this,"Không có sản phẩm có mã " + edtMaLinhKien.getText().trim().toUpperCase());
+							return ;
+						}
+					edtTenLK.setText(lkN.getTenLinhkien());
+					edtDonGia.setText(String.valueOf(formatter.format(lkN.getDonGiaBan()*1000)));
+					edtSoLuong.setText("1");
+					edtGiamGia.setText("0.0");
+				}
+				else if(sou.equals(btnLuuTT)) {
+					if(KiemTraTTLK()) {
+						lkN = lk_dao.getLinhKienTheoMaLK(edtMaLinhKien.getText().trim().toUpperCase());
+						for(ChiTietHD hd2 : dsLK) {
+							if(hd2.getMaLinhKien().equalsIgnoreCase(lkN.getMaLinhkien())) {
+								JOptionPane.showMessageDialog(this,"Sản phẩm đã tồn tại");
+								return;
+							}
+						}
+						int sl = Integer.parseInt(edtSoLuong.getText());
+						if(lkN.getSoLuong() < sl) {
+							JOptionPane.showMessageDialog(this,"Sản phẩm " + lkN.getTenLinhkien() + " chỉ còn " + lkN.getSoLuong() + " trong kho");
+							return;
+						}
+						double dongia = lkN.getDonGiaBan();
+						double giamgia = sl * dongia * Double.parseDouble(edtGiamGia.getText())*1.0/100;
+						ChiTietHD hd = new ChiTietHD(edtMaHDBan.getText().toUpperCase(), edtMaLinhKien.getText().trim().toUpperCase(), sl,dongia,giamgia,sl*dongia-giamgia);
+						dsLK.add(hd);
+						model.addRow(new Object[] {
+								lkN.getMaLinhkien(),lkN.getTenLinhkien(),sl,formatter.format(dongia*1000),formatter.format(giamgia*1000),formatter.format((sl*dongia-giamgia)*1000)
+						});
+						TongTien += sl*dongia-giamgia;
+						lbResultThanhTien.setText(String.valueOf(formatter.format(TongTien*1000)));
+						edtMaLinhKien.setText("");
+						edtSoLuong.setText("");
+						edtGiamGia.setText("");
+						edtTenLK.setText("");
+						edtDonGia.setText("");
+						btnLuuHD.setEnabled(true);
+						btnInHD.setEnabled(true);
+					}
+				}
+				else if(sou.equals(btnXoaLK)) {
+					if(dsLK.size() <= 0){
+						JOptionPane.showMessageDialog(this,"Cần Thêm ít nhất 1 sản phẩm");
+						return;
+					}
+					int row = tb.getSelectedRow();
+					if(row < 0) {
+						JOptionPane.showMessageDialog(this,"Chọn dòng cần Xóa");
+					}
+					else {
+						int temp = JOptionPane.showConfirmDialog(this, "Bạn có muốn xóa linh kiện khỏi hóa đơn?", "Cảnh báo", JOptionPane.YES_NO_CANCEL_OPTION);
+						if(temp == JOptionPane.YES_OPTION) {
+							lkN = lk_dao.getLinhKienTheoMaLK(edtMaLinhKien.getText().trim().toUpperCase());
+							for(ChiTietHD hd2 : dsLK) {
+								if(hd2.getMaLinhKien().equalsIgnoreCase(lkN.getMaLinhkien())) 
+									if(dsLK.remove(hd2)) {
+										TongTien = TongTien - hd2.getThanhTien();
+										model.removeRow(tb.getSelectedRow());
+										edtMaLinhKien.setText("");
+										edtSoLuong.setText("");
+										edtGiamGia.setText("");
+										edtTenLK.setText("");
+										edtDonGia.setText("");
+										lbResultThanhTien.setText(String.valueOf(formatter.format(TongTien*1000)));
+										JOptionPane.showMessageDialog(this,"Xóa sản phẩm thành công");
+										if(dsLK.size() <= 0) {
+											btnLuuHD.setEnabled(false);
+											btnInHD.setEnabled(false);
+										}
+										return;
+									}
+							}
+						}
+					}	
+				}
+				else if(sou.equals(btnsuaLK)) {
+					if(dsLK.size() <= 0){
+						JOptionPane.showMessageDialog(this,"Cần Thêm ít nhất 1 sản phẩm");
+						return;
+					}
+					int row = tb.getSelectedRow();
+					if(row < 0) {
+						JOptionPane.showMessageDialog(this,"Chọn dòng cần sửa");
+					}
+					else {
+						if(KiemTraTTLK()) {
+							lkN = lk_dao.getLinhKienTheoMaLK(String.valueOf(model.getValueAt(row,0)));
+							if(String.valueOf(model.getValueAt(row,0)).equalsIgnoreCase(edtMaLinhKien.getText())) {
+								for(ChiTietHD hd2 : dsLK) {
+									if(hd2.getMaLinhKien().equalsIgnoreCase(lkN.getMaLinhkien())) {
+										int sl = Integer.parseInt(edtSoLuong.getText());
+										if(lkN.getSoLuong() < sl) {
+											JOptionPane.showMessageDialog(this,"Sản phẩm " + lkN.getTenLinhkien() + " chỉ còn " + lkN.getSoLuong() + " trong kho");
+											edtSoLuong.selectAll();
+											edtSoLuong.requestFocus();
+											return;
+										}
+										double dongia = lkN.getDonGiaBan();
+										double giamgia = sl * dongia * Double.parseDouble(edtGiamGia.getText())*1.0/100;
+										TongTien += sl*dongia - giamgia - hd2.getSoLuong()*dongia;
+										lbResultThanhTien.setText(String.valueOf(formatter.format(TongTien*1000)));
+										hd2.setGiamGia(giamgia);
+										hd2.setSoLuong(sl);
+										model.setValueAt(sl, row, 2);
+										model.setValueAt(String.valueOf(formatter.format(giamgia*1000)), row, 4);
+										model.setValueAt(String.valueOf(formatter.format((sl*dongia-giamgia)*1000)), row, 5);
+										JOptionPane.showMessageDialog(this,"Sửa Thông tin chi tiết thành công");
+//										edtMaLinhKien.setText("");
+//										edtSoLuong.setText("");
+//										edtGiamGia.setText("");
+//										edtTenLK.setText("");
+//										edtDonGia.setText("");
+									}
+								}
+							}
+							else {
+								JOptionPane.showMessageDialog(this,"Không Được thay đổi mã linh kiện");
+								edtMaLinhKien.setText(String.valueOf(model.getValueAt(row,0)));
+							}
+						}
+					}
+				}
+				else if(sou.equals(btnXoaRong)) {
+					if(dsLK.size() <= 0){
+						JOptionPane.showMessageDialog(this,"Cần Thêm ít nhất 1 sản phẩm");
+						return;
+					}
+					int temp = JOptionPane.showConfirmDialog(this, "Xóa tất cả thông tin về hóa đơn ?", "Cảnh báo", JOptionPane.YES_NO_CANCEL_OPTION);
+					if(temp == JOptionPane.YES_OPTION) {
+						XoaRong();
+					}
+				}
+				else if(sou.equals(btnInHD)) {
+					if(KiemTraTTC()) {
+						try {
+							tb.print(JTable.PrintMode.FIT_WIDTH);
+						} catch (PrinterException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+					}
+				}
+				else if(sou.equals(btnTimKH)) {
+					if(!edtDienThoai.getText().trim().matches("[0][1-9][0-9]{8}")) {
+						JOptionPane.showMessageDialog(this, "Số điện thoại có dạng 10 số và bắt đầu từ 0");
+						edtMaLinhKien.requestFocus();
+						edtMaLinhKien.selectAll();
+						return ;
+					}
+					KhachHang kh = null;
+					kh = kh_dao.getKhachHangTheoSDT(edtDienThoai.getText());
+					if(kh == null) {
+						edtTenKH.setText("");
+						edtTenKH.setEditable(true);
+						edtDiaChi.setText("");
+						edtDiaChi.setEditable(true);
+						edtEmail.setText("");
+						edtEmail.setEditable(true);
+						JOptionPane.showMessageDialog(this,"Số Điện thoại chưa tồn tại trong danh sách");
+					}
+					else {
+						edtMaKH.setText(kh.getMaKhach());
+						edtTenKH.setText(kh.getTenKhach());
+						edtTenKH.setEditable(false);
+						edtDiaChi.setText(kh.getDiaChi());
+						edtDiaChi.setEditable(false);
+						edtEmail.setText(kh.getEmail());
+						edtEmail.setEditable(false);
+					}
+				}
+				else if(sou.equals(btnTimNV)) {
+					if(!edtMaNV.getText().trim().matches("(NV||nv)[0-9]{5}")) {
+						JOptionPane.showMessageDialog(this, "Mã Nhân viên có định dạng: NV00000");
+						edtMaNV.requestFocus();
+						edtMaNV.selectAll();
+						return;	
+					}
+					NhanVien nv = null;
+					nv = nv_dao.getNhanVienTheoMaNV(edtMaNV.getText());
+					if(nv == null) {
+						JOptionPane.showMessageDialog(this,"Mã nhân viên không tồn tại");
+						edtMaNV.selectAll();
+						edtMaNV.requestFocus();
+						edtTenNV.setText("");
+					}
+					else 
+						edtTenNV.setText(nv.getTenNhanVien());
+				}
+				else if(sou.equals(btnLuuHD)) {
+					if(KiemTraTTC()) {
+						KhachHang kh ;
+						HoaDon hd;
+						kh = new KhachHang(edtMaKH.getText(), edtTenKH.getText(),edtDiaChi.getText(), edtDienThoai.getText(), edtEmail.getText());
+						hd = new HoaDon(edtMaHDBan.getText(),edtMaNV.getText().toLowerCase(),edtMaKH.getText(), Date.valueOf(ChangeDate(edtNgayBan.getText())),TongTien);
+						if(kh_dao.getKhachHangTheoMaKH(edtMaKH.getText()) == null)
+							kh_dao.create(kh);
+						hd_dao.create(hd);
+						for(ChiTietHD cthd : dsLK) {
+							LinhKien lk = lk_dao.getLinhKienTheoMaLK(cthd.getMaLinhKien());
+							lk.setSoLuong(lk.getSoLuong() - cthd.getSoLuong());
+							cthd_dao.create(cthd);
+							lk_dao.update(lk);	
+						}
+						JOptionPane.showMessageDialog(this, "Lưu hóa đơn thành công");
+						int temp = JOptionPane.showConfirmDialog(this, "Bạn có muốn in hóa đơn ?", "Thông Báo", JOptionPane.YES_NO_CANCEL_OPTION);
+						if(temp == JOptionPane.YES_OPTION) {
+							try {
+								tb.print(JTable.PrintMode.FIT_WIDTH);
+							} catch (PrinterException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						}
+						XoaRong();
+						btnLuuHD.setEnabled(false);
+						btnInHD.setEnabled(false);
+						
+					}
+				}
+				///////////////////////////////////////////////////////////////////
+				else if(sou.equals(btnBanHang)) {
+					UI_BanHang frmBanHang = new UI_BanHang();
+					this.dispose();
+				}
+				else if(sou.equals(btnTimKiem)){			
+					UI_TimKiem frmTimKiem= new UI_TimKiem();
+					this.dispose();
+				}
+				else if(sou.equals(btnQuanLy)) {
+					UI_QuanLy frmQuanLy= new UI_QuanLy();
+					this.dispose();
+				}
+				else if(sou.equals(btnBaoCao)) {
+					UI_BaoCao frmBaoCao = new UI_BaoCao();
+					this.dispose();
+				}
+				else if(sou.equals(btnHoTro)) {
+					btnBanHang.setBackground(gbbtn);
+					btnBanHang.setForeground(Color.darkGray);
+					btnHoTro.setBackground(gbActive);
+					btnHoTro.setForeground(Color.black);
+					JOptionPane.showMessageDialog(this, "                           Mọi thắc mắc trong quá trình sử dụng\n"
+							+ "vui lòng liên hệ với chúng tôi thông qua số điện thoại: 0333007630 (Chiêu)\n"
+							+ "                                        Xin chân thành cảm ơn.");
+				}
+				else if(sou.equals(btnDangXuat)) {
+					 UI_DangNhap frmDangNhap= new UI_DangNhap();
+					this.dispose();
+				}
+				else if(sou.equals(btnThoat)) {
+						UI_TrangChu frmTrangChu= new UI_TrangChu();
+						this.dispose();
+				}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// TODO Auto-generated method stub
+		int row = tb.getSelectedRow();
+		edtMaLinhKien.setText(String.valueOf(model.getValueAt(row,0)));
+		edtSoLuong.setText(String.valueOf(model.getValueAt(row,2)));
+		lkN = lk_dao.getLinhKienTheoMaLK(edtMaLinhKien.getText().trim().toUpperCase());
+		edtTenLK.setText(lkN.getTenLinhkien());
+		double giamgia = lkN.getDonGiaBan() * Integer.parseInt(String.valueOf(model.getValueAt(row,2)));
+		for(ChiTietHD hd:dsLK) {
+			if(hd.getMaLinhKien().equalsIgnoreCase(lkN.getMaLinhkien())) {
+				giamgia = ( hd.getGiamGia() / giamgia )* 100;
+				break;
+			}
+		}
+		edtDonGia.setText(String.valueOf(formatter.format(lkN.getDonGiaBan()*1000)));
+
+		edtGiamGia.setText(String.valueOf(giamgia));
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+}
